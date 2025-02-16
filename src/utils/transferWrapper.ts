@@ -5,7 +5,7 @@ export async function transferTokens(
     amount: string = process.env.DEFAULT_CLAIM_AMOUNT || '1000'
 ): Promise<{ success: boolean; transactionHash?: string; error?: string }> {
     const privateKey = process.env.WALLET_PRIVATE_KEY;
-    const ticker = process.env.CLAIM_TICKER || 'NACHO';
+    const ticker = process.env.CLAIM_TICKER || 'CRUMBS';
     
     if (!privateKey) {
         return {

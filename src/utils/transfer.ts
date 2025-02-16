@@ -16,12 +16,12 @@ export async function executeTransfer(options: TransferOptions): Promise<{ succe
     const {
         privateKey: privateKeyArg,
         dest,
-        amount = '1',
-        network = 'mainnet',
-        ticker = 'NACHO',
-        priorityFee = '1.5',
-        timeout = 120000,
-        logLevel = 'INFO'
+        amount = process.env.DEFAULT_CLAIM_AMOUNT || '1333',
+        network = process.env.NETWORK || 'mainnet',
+        ticker = process.env.CLAIM_TICKER || 'CRUMBS',
+        priorityFee = process.env.PRIORITY_FEE || '0.1',
+        timeout = process.env.TIMEOUT || 120000,
+        logLevel = process.env.LOG_LEVEL || 'INFO'
     } = options;
 
     let addedEventTrxId: any;

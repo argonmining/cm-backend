@@ -17,7 +17,7 @@ export async function transferTokens(
 ): Promise<TransferResult> {
     return new Promise((resolve) => {
         const privateKey = process.env.WALLET_PRIVATE_KEY;
-        const ticker = process.env.CLAIM_TICKER || 'NACHO';
+        const ticker = process.env.CLAIM_TICKER || 'CRUMBS';
         
         if (!privateKey) {
             resolve({
