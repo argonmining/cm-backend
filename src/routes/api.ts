@@ -1,22 +1,24 @@
 import { Router } from 'express';
 import { body, param } from 'express-validator';
 import { healthCheck, getClaims, createClaim } from '../controllers/claimController';
+import { verifyRequestSignature } from '../middleware/security';
 
 const router = Router();
 
-// Health check endpoint
+// Health check endpoint (no signature required)
 router.get('/health', healthCheck);
 
-// Get claims for a wallet address
+// Protected routes
 router.get('/claims/:walletAddress', [
+    verifyRequestSignature,
     param('walletAddress')
         .isString()
         .matches(/^kaspa:[a-z0-9]{61,63}$/)
         .withMessage('Invalid Kaspa wallet address format')
 ], getClaims);
 
-// Create a new claim
 router.post('/claim', [
+    verifyRequestSignature,
     body('walletAddress')
         .isString()
         .matches(/^kaspa:[a-z0-9]{61,63}$/)

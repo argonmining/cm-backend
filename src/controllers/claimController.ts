@@ -39,6 +39,17 @@ export const getClaims = async (req: Request, res: Response): Promise<void> => {
     }
 };
 
+function getClientIp(req: Request): string {
+    // Check X-Forwarded-For header from proxy
+    const forwardedFor = req.headers['x-forwarded-for'];
+    if (forwardedFor) {
+        // Get the first IP if multiple are present
+        return (typeof forwardedFor === 'string' ? forwardedFor : forwardedFor[0]).split(',')[0].trim();
+    }
+    // Fallback to direct connection IP
+    return req.socket.remoteAddress || '0.0.0.0';
+}
+
 export const createClaim = async (req: Request, res: Response): Promise<void> => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -52,9 +63,10 @@ export const createClaim = async (req: Request, res: Response): Promise<void> =>
     try {
         const { walletAddress } = req.body;
         const amount = process.env.DEFAULT_CLAIM_AMOUNT || '1000';
+        const clientIp = getClientIp(req);
 
-        // Check for existing claims in the last 24 hours
-        const existingClaim = await pool.query<Claim>(
+        // Check for existing claims in the last 24 hours by wallet address
+        const existingWalletClaim = await pool.query<Claim>(
             `SELECT * FROM claims 
              WHERE wallet_address = $1 
              AND created_at > NOW() - INTERVAL '24 hours'
@@ -64,25 +76,49 @@ export const createClaim = async (req: Request, res: Response): Promise<void> =>
             [walletAddress]
         );
 
-        if (existingClaim.rows.length > 0) {
-            const lastClaim = existingClaim.rows[0];
+        if (existingWalletClaim.rows.length > 0) {
+            const lastClaim = existingWalletClaim.rows[0];
             const nextClaimTime = new Date(lastClaim.created_at.getTime() + 24 * 60 * 60 * 1000);
             const timeRemaining = nextClaimTime.getTime() - Date.now();
             const hoursRemaining = Math.ceil(timeRemaining / (1000 * 60 * 60));
 
             res.status(400).json({
                 success: false,
-                error: `You can only claim once every 24 hours. Please try again in ${hoursRemaining} hours.`
+                error: `This wallet has already claimed within 24 hours. Please try again in ${hoursRemaining} hours.`
+            });
+            return;
+        }
+
+        // Check for existing claims in the last 24 hours by IP address
+        const existingIpClaim = await pool.query<Claim>(
+            `SELECT * FROM claims 
+             WHERE ip_address = $1 
+             AND created_at > NOW() - INTERVAL '24 hours'
+             AND status != 'failed'
+             ORDER BY created_at DESC 
+             LIMIT 1`,
+            [clientIp]
+        );
+
+        if (existingIpClaim.rows.length > 0) {
+            const lastClaim = existingIpClaim.rows[0];
+            const nextClaimTime = new Date(lastClaim.created_at.getTime() + 24 * 60 * 60 * 1000);
+            const timeRemaining = nextClaimTime.getTime() - Date.now();
+            const hoursRemaining = Math.ceil(timeRemaining / (1000 * 60 * 60));
+
+            res.status(400).json({
+                success: false,
+                error: `This IP address has already claimed within 24 hours. Please try again in ${hoursRemaining} hours.`
             });
             return;
         }
 
         // Create initial claim record
         const initialClaim = await pool.query<Claim>(
-            `INSERT INTO claims (wallet_address, amount, status) 
-             VALUES ($1, $2, 'processing') 
+            `INSERT INTO claims (wallet_address, amount, status, ip_address) 
+             VALUES ($1, $2, 'processing', $3) 
              RETURNING *`,
-            [walletAddress, amount]
+            [walletAddress, amount, clientIp]
         );
 
         // Process the token transfer

@@ -11,3 +11,4 @@ node_modules/*
 package-lock.json
 ecosystem.config.js
 src/db/setup.sh
+src/db/init.sql
