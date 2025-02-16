@@ -11,12 +11,12 @@
     "dev": "nodemon src/app.ts",
     "prod": "pm2 start ecosystem.config.js --env production",
     "stop": "pm2 stop cm-claim-server",
-    "restart": "pm2 restart cm-claim-server",
-    "logs": "pm2 logs cm-claim-server",
+    "restart": "pm2 restart cm-claim-server --update-env",
+    "logs": "pm2 logs -f cm-claim-server",
     "status": "pm2 status cm-claim-server"
   },
   "keywords": [],
-  "author": "",
+  "author": "Crumpet Media",
   "license": "ISC",
   "dependencies": {
     "@types/express-rate-limit": "^5.1.3",

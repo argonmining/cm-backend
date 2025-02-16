@@ -12,3 +12,5 @@ package-lock.json
 ecosystem.config.js
 src/db/setup.sh
 src/db/init.sql
+logs/error.log
+logs/out.log
