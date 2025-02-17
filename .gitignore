@@ -1,5 +1,6 @@
 node_modules/
 dist/
+logs/
 .env
 .DS_Store
 
@@ -8,9 +9,15 @@ dist/*
 
 # Ignore all files in the node_modules directory
 node_modules/*
+
+# Ignore all files in the logs directory
+logs/*
+
+# Ignore all files in the src/db directory
+src/db/*
+
+# Ignore all files in the src/wasm directory
+src/wasm/*
+
 package-lock.json
 ecosystem.config.js
-src/db/setup.sh
-src/db/init.sql
-logs/error.log
-logs/out.log
