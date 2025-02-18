@@ -40,11 +40,10 @@ export const getClaims = async (req: Request, res: Response): Promise<void> => {
 };
 
 function getClientIp(req: Request): string {
-    // Check X-Forwarded-For header from proxy
-    const forwardedFor = req.headers['x-forwarded-for'];
-    if (forwardedFor) {
-        // Get the first IP if multiple are present
-        return (typeof forwardedFor === 'string' ? forwardedFor : forwardedFor[0]).split(',')[0].trim();
+    // Use X-Real-IP header set by Nginx
+    const realIp = req.headers['x-real-ip'];
+    if (realIp && typeof realIp === 'string') {
+        return realIp.trim();
     }
     // Fallback to direct connection IP
     return req.socket.remoteAddress || '0.0.0.0';

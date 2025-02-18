@@ -101,7 +101,7 @@ export async function executeTransfer(options: TransferOptions): Promise<{ succe
             }
         });
 
-        const gasFee = 0.3;
+        const gasFee = 0.2;
         const data = { "p": "krc-20", "op": "transfer", "tick": ticker, "amt": amount.toString(), "to": dest };
 
         log(`Main: Data to use for ScriptBuilder: ${JSON.stringify(data)}`, 'DEBUG');
@@ -129,7 +129,7 @@ export async function executeTransfer(options: TransferOptions): Promise<{ succe
             entries,
             outputs: [{
                 address: P2SHAddress.toString(),
-                amount: kaspaToSompi("0.3")!
+                amount: kaspaToSompi("0.2")!
             }],
             changeAddress: address.toString(),
             priorityFee: kaspaToSompi(priorityFee.toString())!,

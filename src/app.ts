@@ -11,7 +11,8 @@ const app = express();
 const port = process.env.PORT || 3001;
 
 // Trust proxy - this is needed because we're behind Nginx
-app.set('trust proxy', 1);
+// Only trust local Nginx reverse proxy
+app.set('trust proxy', 'loopback');
 
 // Rate limiting configuration
 const limiter = rateLimit({
@@ -33,7 +34,8 @@ const corsOptions = {
         'Content-Type',
         'x-signature',
         'x-timestamp',
-        'x-nonce'
+        'x-nonce',
+        'x-real-ip'
     ],
     maxAge: 600, // 10 minutes
 };
