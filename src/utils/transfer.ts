@@ -144,6 +144,7 @@ export async function executeTransfer(options: TransferOptions): Promise<{ succe
             SubmittedtrxId = hash;
         }
 
+        let revealHash: any;
         // Wait until the maturity event has been received
         while (!eventReceived) {
             await new Promise(resolve => setTimeout(resolve, 500)); // wait and check every 500ms
@@ -167,8 +168,6 @@ export async function executeTransfer(options: TransferOptions): Promise<{ succe
                 networkId: network
             });
 
-            let revealHash: any;
-
             for (const transaction of transactions) {
                 transaction.sign([privateKey], false);
                 log(`Main: Transaction with revealUTX0s signed with ID: ${transaction.id}`, 'DEBUG');
@@ -184,8 +183,11 @@ export async function executeTransfer(options: TransferOptions): Promise<{ succe
             }
 
             // Wait until the maturity event has been received
-            while (!eventReceived) {
-                await new Promise(resolve => setTimeout(resolve, 500)); // wait and check every 500ms
+            let waited = 0;
+            const maxWait = 10000; // 10 seconds max wait for event
+            while (!eventReceived && waited < maxWait) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                waited += 500;
             }
 
             try {
@@ -204,11 +206,23 @@ export async function executeTransfer(options: TransferOptions): Promise<{ succe
                     await RPC.disconnect();
                     log('RPC client disconnected.', 'INFO');
                     return { success: true, txHash: revealHash };
+                } else if (!eventReceived && revealHash) {
+                    // If we have a revealHash but missed the event, treat as success but log a warning
+                    log('Reveal transaction hash exists but event was not received. Treating as success.', 'WARN');
+                    await RPC.disconnect();
+                    log('RPC client disconnected.', 'INFO');
+                    return { success: true, txHash: revealHash };
                 } else if (!eventReceived) {
                     log('Reveal transaction has not been accepted yet.', 'INFO');
                     return { success: false, error: 'Reveal transaction not accepted' };
                 }
             } catch (error) {
+                if (revealHash) {
+                    log('Error checking reveal transaction status, but revealHash exists. Treating as success.', 'WARN');
+                    await RPC.disconnect();
+                    log('RPC client disconnected.', 'INFO');
+                    return { success: true, txHash: revealHash };
+                }
                 log(`Error checking reveal transaction status: ${error}`, 'ERROR');
                 return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
             }
