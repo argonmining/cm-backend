@@ -27,6 +27,7 @@ export async function executeTransfer(options: TransferOptions): Promise<{ succe
     let addedEventTrxId: any;
     let SubmittedtrxId: any;
     let eventReceived = false;
+    let revealHash: any;
 
     function log(message: string, level: string = 'INFO') {
         const timestamp = new Date().toISOString();
@@ -144,7 +145,6 @@ export async function executeTransfer(options: TransferOptions): Promise<{ succe
             SubmittedtrxId = hash;
         }
 
-        let revealHash: any;
         // Wait until the maturity event has been received
         while (!eventReceived) {
             await new Promise(resolve => setTimeout(resolve, 500)); // wait and check every 500ms
@@ -226,6 +226,14 @@ export async function executeTransfer(options: TransferOptions): Promise<{ succe
                 log(`Error checking reveal transaction status: ${error}`, 'ERROR');
                 return { success: false, error: error instanceof Error ? error.message : 'Unknown error occurred' };
             }
+        }
+
+        // FINAL FALLBACK: If revealHash exists at this point, treat as success
+        if (revealHash) {
+            log('No UTXOs available for reveal, but revealHash exists. Treating as success.', 'WARN');
+            await RPC.disconnect();
+            log('RPC client disconnected.', 'INFO');
+            return { success: true, txHash: revealHash };
         }
 
         return { success: false, error: 'No UTXOs available for reveal' };
